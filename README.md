@@ -1,135 +1,97 @@
-# Turborepo starter
+Buzflow
+Buzflow is a small, real-time social app where users can post short updates and chat instantly. Built with a Turbo monorepo, it uses Next.js for the frontend, NestJS for the backend, WebSockets for real-time communication, and TypeScript across the stack.
 
-This Turborepo starter is maintained by the Turborepo core team.
+Table of Contents
+About
+Features
+Tech Stack
+Architecture Overview
+Getting Started
+Prerequisites
+Setup
+Development
+Scripts
+Environment Variables
+WebSocket Notes
+Deployment
+Contributing
+License
+Contact
+1. About
+Buzflow aims to be a minimal, extensible platform for posting and chatting with live updates. It focuses on real-time interaction, simple UX, and an organized monorepo that makes development and scaling straightforward.
 
-## Using this example
+2. Features
+Create, edit, and delete short posts
+Real-time chat rooms and direct messaging (via WebSockets)
+Live updates for new posts and incoming messages
+Authentication-ready structure (plug your preferred auth)
+Modular services and shared types across frontend and backend (TypeScript)
+3. Tech Stack
+Frontend: Next.js (React + SSR/SSG where needed)
+Backend: NestJS (REST + WebSocket gateway)
+Monorepo: Turborepo (turbo)
+Real-time: WebSockets (NestJS Gateway + client)
+Language: TypeScript
+Package manager: npm / pnpm / yarn (choose one)
+4. Architecture Overview
+/apps
+/web — Next.js frontend
+/api — NestJS backend (HTTP + WebSocket)
+/packages
+/shared — shared TypeScript types, utils, and DTOs
+/ui — (optional) shared UI components
+Communication:
+HTTP endpoints for posts, user metadata, etc.
+WebSocket channel(s) for chat messages and live post events
+5. Getting Started
+Prerequisites
+Node.js (LTS recommended)
+npm or pnpm or yarn
+(Optional) Docker for containerized setup
+Setup
+Clone the repo: git clone <YOUR_REPO_URL>
+Install dependencies: cd buzflow npm install (or pnpm install / yarn)
+Set environment variables (see section below).
+Development
+Start both apps concurrently (example with npm scripts): npm run dev
+Open the frontend (usually at http://localhost:3000) and backend at its configured port (e.g., 4000).
+Note: If using Turborepo, you can run workspace-level dev commands that start both apps in parallel.
 
-Run the following command:
+6. Scripts
+Example package.json scripts (adjust to your repo):
 
-```sh
-npx create-turbo@latest
-```
+dev — Start frontend and backend in development mode
+dev:web — Start Next.js dev server
+dev:api — Start NestJS in watch mode
+build — Build both apps
+start — Start production servers
+lint — Run linters
+test — Run tests
+Example:
 
-## What's inside?
+npm run dev:web
+npm run dev:api
+npx turbo run dev
+7. Environment Variables
+Create a .env file in the root or in each app as needed. Typical variables:
 
-This Turborepo includes the following packages/apps:
+API_PORT=4000
+NEXT_PUBLIC_API_URL=http://localhost:4000
+WS_URL=ws://localhost:4000
+DATABASE_URL=... (if you add persistence)
+JWT_SECRET=... (if using authentication)
+Keep secrets out of version control.
 
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
-```
-
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
-
-```
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
-
-### Develop
-
-To develop all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
-```
-
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
-
-```
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-```
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+8. WebSocket Notes
+The NestJS WebSocket Gateway handles message broadcasting and rooms.
+Client connects from the Next.js app using a WebSocket client (native WebSocket, Socket.IO client, or libraries like ws or socket.io-client depending on chosen implementation).
+Use shared DTO/types from /packages/shared to keep message contracts consistent between client and server.
+9. Deployment
+Build both apps (Next.js can be hosted on Vercel, NestJS on a Node host or cloud function).
+For production WebSockets, ensure sticky sessions or use a gateway (e.g., Redis adapter for scaling Socket.IO).
+Set environment variables in your hosting platform.
+10. Contributing
+Fork the repo, create a feature branch, and open a pull request.
+Keep changes small and focused.
+Use shared types for any contract changes between frontend and backend.
+Run tests and linters before submitting PRs.
