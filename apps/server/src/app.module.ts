@@ -15,6 +15,11 @@ import {
 } from './models/schemas';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
+import { SubscriptionsModule } from './subscriptions/subscriptions.module';
+import { ChatModule } from './chat/chat.module';
+import { PostsModule } from './posts/posts.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { MessagesModule } from './messages/messages.module';
 
 @Module({
   imports: [
@@ -35,6 +40,11 @@ import { UsersModule } from './users/users.module';
     ]),
     AuthModule,
     UsersModule,
+    SubscriptionsModule,
+    PostsModule,
+    NotificationsModule,
+    ChatModule,
+    MessagesModule,
   ],
 })
 export class AppModule {}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Bell, LogOut, MessageSquare, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,19 +9,53 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from '@/components/ui/popover';
-import { mockNotifications, getUserById } from '@/lib/mock-data';
 import { useAuth } from '@/context/auth-context';
+import { api } from '@/lib/api';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+
+type Notification = {
+    _id: string;
+    fromUserId: { _id: string; name: string } | string;
+    type: string;
+    message: string;
+    read: boolean;
+    createdAt: string;
+};
 
 export default function Header() {
     const pathname = usePathname();
     const { user, logout } = useAuth();
-    const [notifications, setNotifications] = useState(mockNotifications);
-    const unreadCount = notifications.filter((n) => !n.read).length;
+    const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [unreadCount, setUnreadCount] = useState(0);
 
-    const markAllRead = () => {
-        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    const fetchNotifications = useCallback(async () => {
+        try {
+            const [notifs, countData] = await Promise.all([
+                api<Notification[]>('/notifications'),
+                api<{ count: number }>('/notifications/unread-count'),
+            ]);
+            setNotifications(notifs);
+            setUnreadCount(countData.count);
+        } catch {
+            // Not logged in or error — ignore
+        }
+    }, []);
+
+    useEffect(() => {
+        if (user) {
+            fetchNotifications();
+        }
+    }, [user, fetchNotifications]);
+
+    const markAllRead = async () => {
+        try {
+            await api('/notifications/read-all', { method: 'PATCH' });
+            setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+            setUnreadCount(0);
+        } catch {
+            // ignore
+        }
     };
 
     return (
@@ -53,15 +87,13 @@ export default function Header() {
             </div>
 
             <div className="flex items-center gap-2">
-                {/* User name */}
                 {user && (
                     <span className="text-sm text-gray-600 mr-2">{user.name}</span>
                 )}
 
-                {/* Notification Bell */}
                 <Popover>
                     <PopoverTrigger asChild>
-                        <Button variant="ghost" size="icon" className="relative">
+                        <Button variant="ghost" size="icon" className="relative" onClick={fetchNotifications}>
                             <Bell className="h-5 w-5" />
                             {unreadCount > 0 && (
                                 <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs">
@@ -107,7 +139,6 @@ export default function Header() {
                     </PopoverContent>
                 </Popover>
 
-                {/* Logout */}
                 <Button variant="ghost" size="icon" onClick={logout}>
                     <LogOut className="h-5 w-5" />
                 </Button>

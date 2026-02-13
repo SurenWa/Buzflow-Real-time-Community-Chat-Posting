@@ -2,7 +2,8 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { api, setAccessToken, getAccessToken } from '@/lib/api';
+import { api, setAccessToken } from '@/lib/api';
+import { connectSocket, disconnectSocket } from '@/lib/socket';
 
 type User = {
     _id: string;
@@ -24,7 +25,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [loading, setLoading] = useState(true);
     const router = useRouter();
 
-    // Try to restore session on mount (using refresh token cookie)
+    // Connect socket whenever user is set
+    useEffect(() => {
+        if (user) {
+            connectSocket(user._id);
+        }
+        return () => {
+            // Cleanup on unmount (but don't disconnect on every re-render)
+        };
+    }, [user]);
+
     useEffect(() => {
         const restoreSession = async () => {
             try {
@@ -37,7 +47,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 const me = await api<User>('/auth/me', { method: 'POST' });
                 setUser(me);
             } catch {
-                // No valid session — that's fine
                 setAccessToken(null);
                 setUser(null);
             } finally {
@@ -66,8 +75,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
             await api('/auth/logout', { method: 'POST' });
         } catch {
-            // Ignore — we're logging out anyway
+            // ignore
         }
+        disconnectSocket();
         setAccessToken(null);
         setUser(null);
         router.push('/signin');

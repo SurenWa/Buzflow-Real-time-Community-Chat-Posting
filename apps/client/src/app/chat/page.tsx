@@ -5,10 +5,10 @@ import Header from '@/components/layout/header';
 import ChatSidebar from '@/components/chat/chat-sidebar';
 import ChatArea from '@/components/chat/chat-area';
 import ProtectedRoute from '@/components/auth/protected-route';
-import { type MockUser } from '@/lib/mock-data';
+import type { SubscribedUser } from '@/components/chat/chat-sidebar';
 
 export default function ChatPage() {
-    const [selectedUser, setSelectedUser] = useState<MockUser | null>(null);
+    const [selectedUser, setSelectedUser] = useState<SubscribedUser | null>(null);
 
     return (
         <ProtectedRoute>
