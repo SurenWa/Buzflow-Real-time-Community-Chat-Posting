@@ -3,9 +3,7 @@
 import { useState, useEffect } from 'react';
 import Header from '@/components/layout/header';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Card, CardContent } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { ImageIcon, Send } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/context/auth-context';
 import ProtectedRoute from '@/components/auth/protected-route';
@@ -24,12 +22,32 @@ type Post = {
 };
 
 function getInitials(name: string): string {
-    return name
-        .split(' ')
-        .map((n) => n[0])
-        .join('')
-        .toUpperCase()
-        .slice(0, 2);
+    return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
+}
+
+function getAvatarColor(name: string): string {
+    const colors = [
+        'hsl(220, 90%, 56%)', 'hsl(152, 69%, 45%)', 'hsl(280, 67%, 55%)',
+        'hsl(350, 80%, 55%)', 'hsl(32, 90%, 55%)', 'hsl(190, 80%, 45%)',
+        'hsl(330, 70%, 55%)', 'hsl(210, 70%, 50%)',
+    ];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+        hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return colors[Math.abs(hash) % colors.length];
+}
+
+function timeAgo(dateStr: string): string {
+    const now = Date.now();
+    const date = new Date(dateStr).getTime();
+    const diff = Math.floor((now - date) / 1000);
+
+    if (diff < 60) return 'Just now';
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+    return new Date(dateStr).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
 export default function PostsPage() {
@@ -44,39 +62,29 @@ export default function PostsPage() {
             try {
                 const data = await api<Post[]>('/posts/feed');
                 setPosts(data);
-            } catch {
-                // ignore
-            } finally {
-                setLoading(false);
-            }
+            } catch { /* ignore */ }
+            finally { setLoading(false); }
         };
-
         fetchPosts();
     }, []);
 
     const handleCreatePost = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!content.trim() || !user) return;
-
         setPosting(true);
         try {
             const newPost = await api<Post>('/posts', {
                 method: 'POST',
                 body: JSON.stringify({ content: content.trim() }),
             });
-
-            // Add to top of feed with user info
             const postWithAuthor: Post = {
                 ...newPost,
                 authorId: { _id: user._id, name: user.name, email: user.email },
             };
             setPosts((prev) => [postWithAuthor, ...prev]);
             setContent('');
-        } catch {
-            // ignore
-        } finally {
-            setPosting(false);
-        }
+        } catch { /* ignore */ }
+        finally { setPosting(false); }
     };
 
     const getAuthorInfo = (authorId: PostAuthor | string) => {
@@ -88,71 +96,106 @@ export default function PostsPage() {
 
     return (
         <ProtectedRoute>
-            <div className="h-screen flex flex-col">
+            <div className="h-screen flex flex-col bg-gray-50/50">
                 <Header />
-                <ScrollArea className="flex-1">
-                    <div className="max-w-2xl mx-auto py-6 px-4 space-y-6">
+                <div className="flex-1 overflow-y-auto">
+                    <div className="max-w-xl mx-auto py-6 px-4 space-y-4">
                         {/* Create Post */}
-                        <Card>
-                            <CardContent className="pt-6">
-                                <form onSubmit={handleCreatePost} className="space-y-3">
+                        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden animate-fade-in-up">
+                            <form onSubmit={handleCreatePost}>
+                                <div className="p-4">
                                     <div className="flex items-start gap-3">
-                                        <Avatar className="h-9 w-9 mt-1">
-                                            <AvatarFallback className="text-xs bg-gray-200">
-                                                {user ? getInitials(user.name) : '??'}
-                                            </AvatarFallback>
-                                        </Avatar>
+                                        <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 mt-0.5"
+                                            style={{ background: user ? getAvatarColor(user.name) : 'hsl(220, 14%, 80%)' }}>
+                                            {user ? getInitials(user.name) : '??'}
+                                        </div>
                                         <textarea
                                             placeholder="What's on your mind?"
                                             value={content}
                                             onChange={(e) => setContent(e.target.value)}
                                             rows={3}
-                                            className="flex-1 resize-none rounded-lg border border-gray-200 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            className="flex-1 resize-none text-sm text-gray-800 placeholder:text-gray-400 outline-none leading-relaxed bg-transparent"
                                         />
                                     </div>
-                                    <div className="flex justify-end">
-                                        <Button type="submit" size="sm" disabled={!content.trim() || posting}>
-                                            {posting ? 'Posting...' : 'Post'}
-                                        </Button>
-                                    </div>
-                                </form>
-                            </CardContent>
-                        </Card>
+                                </div>
+                                <div className="px-4 py-3 border-t border-gray-50 flex items-center justify-end">
+                                    <Button
+                                        type="submit"
+                                        size="sm"
+                                        disabled={!content.trim() || posting}
+                                        className="rounded-xl px-5 font-semibold text-xs h-8 transition-all duration-200 hover:shadow-md hover:shadow-blue-500/20"
+                                        style={{ background: 'hsl(220, 90%, 56%)' }}
+                                    >
+                                        {posting ? (
+                                            <span className="flex items-center gap-1.5">
+                                                <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                                </svg>
+                                                Posting
+                                            </span>
+                                        ) : (
+                                            <span className="flex items-center gap-1.5">
+                                                <Send className="w-3 h-3" />
+                                                Post
+                                            </span>
+                                        )}
+                                    </Button>
+                                </div>
+                            </form>
+                        </div>
 
                         {/* Feed */}
                         {loading ? (
-                            <p className="text-center text-gray-400 text-sm py-8">Loading posts...</p>
+                            <div className="space-y-4">
+                                {[1, 2, 3].map((i) => (
+                                    <div key={i} className="bg-white rounded-2xl border border-gray-100 p-5 animate-pulse">
+                                        <div className="flex items-center gap-3 mb-3">
+                                            <div className="w-9 h-9 rounded-full bg-gray-200" />
+                                            <div className="space-y-1.5">
+                                                <div className="h-3 w-28 rounded bg-gray-200" />
+                                                <div className="h-2.5 w-16 rounded bg-gray-100" />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <div className="h-3 w-full rounded bg-gray-100" />
+                                            <div className="h-3 w-3/4 rounded bg-gray-100" />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         ) : posts.length === 0 ? (
-                            <p className="text-center text-gray-400 text-sm py-8">No posts yet.</p>
+                            <div className="text-center py-16 animate-fade-in">
+                                <p className="text-sm text-gray-400">No posts yet. Be the first to share something!</p>
+                            </div>
                         ) : (
-                            posts.map((post) => {
+                            posts.map((post, i) => {
                                 const author = getAuthorInfo(post.authorId);
                                 return (
-                                    <Card key={post._id}>
-                                        <CardContent className="pt-6">
-                                            <div className="flex items-start gap-3">
-                                                <Avatar className="h-9 w-9">
-                                                    <AvatarFallback className="text-xs bg-gray-200">
-                                                        {author.initials}
-                                                    </AvatarFallback>
-                                                </Avatar>
-                                                <div className="flex-1">
-                                                    <div className="flex items-center gap-2">
-                                                        <p className="text-sm font-semibold">{author.name}</p>
-                                                        <span className="text-xs text-gray-400">
-                                                            {new Date(post.createdAt).toLocaleString()}
-                                                        </span>
-                                                    </div>
-                                                    <p className="text-sm text-gray-700 mt-1">{post.content}</p>
+                                    <div
+                                        key={post._id}
+                                        className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden transition-shadow hover:shadow-md animate-fade-in-up"
+                                        style={{ animationDelay: `${i * 50}ms` }}
+                                    >
+                                        <div className="p-5">
+                                            <div className="flex items-center gap-3 mb-3">
+                                                <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                                                    style={{ background: getAvatarColor(author.name) }}>
+                                                    {author.initials}
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-semibold text-gray-900">{author.name}</p>
+                                                    <p className="text-xs text-gray-400">{timeAgo(post.createdAt)}</p>
                                                 </div>
                                             </div>
-                                        </CardContent>
-                                    </Card>
+                                            <p className="text-sm text-gray-700 leading-relaxed">{post.content}</p>
+                                        </div>
+                                    </div>
                                 );
                             })
                         )}
                     </div>
-                </ScrollArea>
+                </div>
             </div>
         </ProtectedRoute>
     );

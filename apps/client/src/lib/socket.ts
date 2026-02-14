@@ -10,48 +10,53 @@ export function getSocket(): Socket | null {
 }
 
 export function connectSocket(userId: string): Socket {
-    // If already connected, return existing socket
     if (socket?.connected) {
         return socket;
     }
 
-    // Create new connection
+    // Disconnect old socket if exists
+    if (socket) {
+        socket.disconnect();
+        socket = null;
+    }
+
+    const token = getAccessToken();
+
     socket = io(SOCKET_URL, {
-        // Socket.IO connection options:
-        transports: ['websocket', 'polling'], // Prefer WebSocket, fallback to polling
-        withCredentials: true,                // Send cookies (for refresh token)
+        // Send JWT in the handshake — server middleware verifies this
+        auth: {
+            token,
+        },
+        transports: ['websocket', 'polling'],
+        withCredentials: true,
         autoConnect: true,
-        reconnection: true,                   // Auto-reconnect if connection drops
-        reconnectionAttempts: 10,             // Try 10 times before giving up
-        reconnectionDelay: 1000,              // Wait 1s between attempts
-        reconnectionDelayMax: 5000,           // Max 5s between attempts
+        reconnection: true,
+        reconnectionAttempts: 10,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
     });
 
-    // ─── Connection Lifecycle Events ───────────────
     socket.on('connect', () => {
-        console.log('🔌 Socket connected:', socket?.id);
-
-        // Tell the server who we are
-        socket?.emit('register', { userId });
+        console.log('🔌 Socket connected (authenticated):', socket?.id);
     });
 
     socket.on('disconnect', (reason) => {
         console.log('❌ Socket disconnected:', reason);
-        // Socket.IO will auto-reconnect unless we called socket.disconnect()
-        // Common reasons:
-        // - 'io server disconnect' → server forcefully disconnected us
-        // - 'transport close' → connection lost (network issue)
-        // - 'ping timeout' → server didn't respond to keepalive
     });
 
     socket.on('connect_error', (err) => {
-        console.log('⚠️ Socket connection error:', err.message);
+        console.log('⚠️ Socket auth error:', err.message);
+
+        // If token expired, we could try refreshing and reconnecting
+        // For now, just log it — the auto-reconnect will retry
     });
 
-    socket.on('reconnect', (attemptNumber) => {
-        console.log(`🔄 Socket reconnected after ${attemptNumber} attempts`);
-        // Re-register after reconnection
-        socket?.emit('register', { userId });
+    socket.on('reconnect_attempt', () => {
+        // Update the token on reconnection attempts (it might have been refreshed)
+        const freshToken = getAccessToken();
+        if (socket && freshToken) {
+            socket.auth = { token: freshToken };
+        }
     });
 
     return socket;

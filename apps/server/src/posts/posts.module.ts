@@ -6,6 +6,7 @@ import { PostsController } from './posts.controller';
 import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { UsersModule } from '../users/users.module';
+import { ChatModule } from '../chat/chat.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { UsersModule } from '../users/users.module';
     SubscriptionsModule,
     NotificationsModule,
     UsersModule,
+    ChatModule,
   ],
   controllers: [PostsController],
   providers: [PostsService],

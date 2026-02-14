@@ -11,22 +11,28 @@ export class NotificationsService {
   ) {}
 
   // Create notifications for all subscribers when a post is made
+  // Create notifications for all subscribers when a post is made
   async createPostNotifications(
     authorId: string,
     authorName: string,
     postId: string,
     subscriberIds: string[],
   ) {
-    const notifications = subscriberIds.map((recipientId) => ({
+    const now = new Date();
+
+    const notificationsData = subscriberIds.map((recipientId) => ({
       recipientId: new Types.ObjectId(recipientId),
       fromUserId: new Types.ObjectId(authorId),
       postId: new Types.ObjectId(postId),
       type: 'new_post',
       message: `${authorName} made a new post.`,
       read: false,
+      createdAt: now,
+      updatedAt: now,
     }));
 
-    return this.notificationModel.insertMany(notifications);
+    const result = await this.notificationModel.insertMany(notificationsData);
+    return result;
   }
 
   // Get notifications for a user (newest first)

@@ -3,7 +3,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, setAccessToken } from '@/lib/api';
-import { connectSocket, disconnectSocket } from '@/lib/socket';
 
 type User = {
     _id: string;
@@ -24,16 +23,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const router = useRouter();
-
-    // Connect socket whenever user is set
-    useEffect(() => {
-        if (user) {
-            connectSocket(user._id);
-        }
-        return () => {
-            // Cleanup on unmount (but don't disconnect on every re-render)
-        };
-    }, [user]);
 
     useEffect(() => {
         const restoreSession = async () => {
@@ -77,7 +66,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } catch {
             // ignore
         }
-        disconnectSocket();
         setAccessToken(null);
         setUser(null);
         router.push('/signin');

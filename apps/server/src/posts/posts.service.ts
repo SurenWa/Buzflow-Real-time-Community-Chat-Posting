@@ -5,6 +5,12 @@ import { Post, PostDocument } from '../models/schemas';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import { NotificationsService } from '../notifications/notifications.service';
 
+export type PostCreationResult = {
+  post: any;
+  notifications: any[];
+  subscriberIds: string[];
+};
+
 @Injectable()
 export class PostsService {
   constructor(
@@ -13,7 +19,11 @@ export class PostsService {
     private notificationsService: NotificationsService,
   ) {}
 
-  async createPost(authorId: string, authorName: string, content: string) {
+  async createPost(
+    authorId: string,
+    authorName: string,
+    content: string,
+  ): Promise<PostCreationResult> {
     // 1) Create the post
     const post = await this.postModel.create({
       authorId: new Types.ObjectId(authorId),
@@ -25,8 +35,9 @@ export class PostsService {
       await this.subscriptionsService.getSubscribers(authorId);
 
     // 3) Create notification records for each subscriber
+    let notifications: any[] = [];
     if (subscriberIds.length > 0) {
-      await this.notificationsService.createPostNotifications(
+      notifications = await this.notificationsService.createPostNotifications(
         authorId,
         authorName,
         post._id.toString(),
@@ -34,10 +45,10 @@ export class PostsService {
       );
     }
 
-    // Return the post with author info
     return {
-      ...post.toObject(),
-      subscriberCount: subscriberIds.length,
+      post: post.toObject(),
+      notifications,
+      subscriberIds,
     };
   }
 
